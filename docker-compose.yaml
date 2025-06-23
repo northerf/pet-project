@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: petuser
+      POSTGRES_PASSWORD: petpassword
+      POSTGRES_DB: petprojectdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
