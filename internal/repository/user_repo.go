@@ -14,6 +14,7 @@ type UserRepository interface {
 	Update(user *model.User) error
 	Delete(user *model.User) error
 	FindByEmail(email string) (*model.User, error)
+	FindByID(id int) (*model.User, error)
 }
 
 func (r *PostgresUserRepository) Create(user *model.User) error {
@@ -47,6 +48,17 @@ func (r *PostgresUserRepository) FindByEmail(email string) (*model.User, error) 
 	query := `SELECT id, name, email, password FROM users WHERE email = $1`
 	user := &model.User{}
 	row := r.DB.QueryRow(query, email)
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *PostgresUserRepository) FindByID(id int) (*model.User, error) {
+	query := `SELECT id, name, email, password FROM users WHERE id = $1`
+	user := &model.User{}
+	row := r.DB.QueryRow(query, id)
 	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)
 	if err != nil {
 		return nil, err

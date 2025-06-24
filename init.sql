@@ -32,3 +32,11 @@ CREATE TABLE tasks (
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to) REFERENCES users(id)
 );
+
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    task_id INT NOT NULL,
+    user_id INT,
+    text VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)

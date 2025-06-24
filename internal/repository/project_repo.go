@@ -24,7 +24,7 @@ func (rp *PostgresProjectRepository) CreateProject(project *model.Project) error
 }
 
 func (rp *PostgresProjectRepository) UpdateProject(project *model.Project) error {
-	query := `UPDATE projects SET name = $2, description = $3, ownerId = $4, updatedAt = $5 WHERE id = $1`
+	query := `UPDATE projects SET name = $2, description = $3, owner_id = $4, updated_at = $5 WHERE id = $1`
 	_, err := rp.DB.Exec(query, project.ID, project.Name, project.Description, project.OwnerID, project.UpdatedAt)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (rp *PostgresProjectRepository) UpdateProject(project *model.Project) error
 
 func (rp *PostgresProjectRepository) GetByIDProject(id int) (*model.Project, error) {
 	project := &model.Project{}
-	query := `SELECT id, name, description, ownerId, createdAt, updatedAt FROM projects WHERE id = $1`
+	query := `SELECT id, name, description, owner_id, created_at, updated_at FROM projects WHERE id = $1`
 	row := rp.DB.QueryRow(query, id)
 	err := row.Scan(&project.ID, &project.Name, &project.Description, &project.OwnerID, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {

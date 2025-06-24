@@ -2,10 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
+	"pet-project/internal/middleware"
 	"pet-project/internal/service"
-	"pet-project/pkg/model"
 )
 
 type AuthHandler struct {
@@ -39,48 +38,51 @@ func (h *AuthHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name == nil {
-		writeError(w, errors.New("Name is required"), http.StatusBadRequest)
-	}
-	if req.Email == nil {
-		writeError(w, errors.New("Email is required"), http.StatusBadRequest)
-	}
-	if req.Password == nil {
-		writeError(w, errors.New("Password is required"), http.StatusBadRequest)
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
 	}
 
-	user := &model.User{
-		Name:     *req.Name,
-		Email:    *req.Email,
-		Password: *req.Password,
+	user, err := h.AuthService.GetUserByID(userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
 	}
 
-	err := h.AuthService.UpdateUser(user)
+	if req.Name != nil {
+		user.Name = *req.Name
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+	if req.Password != nil {
+		user.Password = *req.Password
+	}
+
+	err = h.AuthService.UpdateUser(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{
-	"message":"User updated successfully"
-	}`))
+	w.Write([]byte(`{"message":"User updated successfully"}`))
 }
 
 func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	var req deleteUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	err := h.AuthService.DeleteUser(req.Email)
+
+	err := h.AuthService.DeleteUserByID(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{
-	"message":"User deleted successfully"
-	}`))
+	w.Write([]byte(`{"message":"User deleted successfully"}`))
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
