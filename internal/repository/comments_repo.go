@@ -19,7 +19,7 @@ type CommentsRepository interface {
 
 func (r *PostgresCommentsRepository) AddComment(com *model.Comments) error {
 	query := `INSERT INTO comments (task_id, user_id, text, created_at)
-				VALUES ($1, $2, $3, $4) RETURNING id`
+				VALUES ($1, $2, $3, $4, $5) RETURNING id`
 	return r.DB.QueryRow(query, com.TaskID, com.UserID, com.Text, com.CreatedAt).Scan(&com.ID)
 }
 
@@ -79,8 +79,9 @@ func (r *PostgresCommentsRepository) GetCommentsByUser(user_id int) ([]*model.Co
 }
 
 func (r *PostgresCommentsRepository) UpdateCommentText(com_id int, new_text string) error {
+	comment := &model.Comments{}
 	query := `UPDATE comments SET text = $1 WHERE id = $2`
-	_, err := r.DB.Exec(query, new_text, com_id)
+	_, err := r.DB.Exec(query, comment.Text, comment.ID)
 	if err != nil {
 		return err
 	}
