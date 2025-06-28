@@ -58,23 +58,26 @@ func (s *AuthService) Login(email, password string) (string, error) {
 }
 
 func (s *AuthService) UpdateUser(user *model.User) error {
-	return s.Repository.Update(user)
+	userOld, err := s.Repository.FindByEmail(user.Email)
+	if err != nil {
+		return err
+	}
+
+	if user.Name != "" {
+		userOld.Name = user.Name
+	}
+	if user.Email != "" {
+		userOld.Email = user.Email
+	}
+	if user.Password != "" {
+		userOld.Password = user.Password
+	}
+
+	return s.Repository.Update(userOld)
 }
 
 func (s *AuthService) DeleteUser(email string) error {
 	user, err := s.Repository.FindByEmail(email)
-	if err != nil {
-		return err
-	}
-	return s.Repository.Delete(user)
-}
-
-func (s *AuthService) GetUserByID(id int) (*model.User, error) {
-	return s.Repository.FindByID(id)
-}
-
-func (s *AuthService) DeleteUserByID(id int) error {
-	user, err := s.Repository.FindByID(id)
 	if err != nil {
 		return err
 	}
