@@ -40,3 +40,14 @@ CREATE TABLE comments (
     text VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
+
+DROP TABLE notification
+
+CREATE TABLE notification (
+    id SERIAL PRIMARY KEY,
+    user_id INT,
+    type VARCHAR(50),
+    message VARCHAR(255),
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)

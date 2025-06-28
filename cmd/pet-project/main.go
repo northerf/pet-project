@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"pet-project/internal/handler"
 	"pet-project/internal/middleware"
+	"pet-project/internal/realtime"
 	"pet-project/internal/repository"
 	"pet-project/internal/service"
 
@@ -26,6 +27,9 @@ func main() {
 	projectRepo := &repository.PostgresProjectRepository{DB: db}
 	taskRepo := &repository.PostgresTaskRepository{DB: db}
 	comRepo := &repository.PostgresCommentsRepository{DB: db}
+	notRepo := &repository.PostgresNotificationRepository{DB: db}
+
+	clientManager := realtime.NewClientManager()
 
 	authService := &service.AuthService{
 		Repository: userRepo,
@@ -40,13 +44,36 @@ func main() {
 	comService := &service.CommentsService{
 		Repository: comRepo,
 	}
+	notService := &service.NotificationService{
+		Repository:    notRepo,
+		ClientManager: clientManager,
+	}
 
 	authHandler := &handler.AuthHandler{AuthService: authService}
 	projectHandler := &handler.ProjectHandler{ProjectService: projectService}
 	taskHandler := &handler.TaskHandler{TaskService: taskService}
 	commentsHandler := &handler.CommentsHandler{CommentsService: comService}
+	notificationHandler := &handler.NotificationHandler{NotificationService: notService}
+	notificationWSHandler := &handler.NotificationWSHandler{
+		ClientManager: clientManager,
+		JwtSecret:     []byte("supersecretkey"),
+		AuthService:   authService,
+	}
 
 	r := chi.NewRouter()
+
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			if req.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			next.ServeHTTP(w, req)
+		})
+	})
 
 	r.Post("/login", authHandler.Login)
 	r.Post("/register", authHandler.Register)
@@ -69,7 +96,7 @@ func main() {
 	})
 
 	r.Route("/comments", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware([]byte("supersecretkey"))) // Предполагая, что у нас есть middleware для авторизации
+		r.Use(middleware.AuthMiddleware([]byte("supersecretkey")))
 		r.Post("/", commentsHandler.AddCommentRequest)
 		r.Delete("/{comID}", commentsHandler.DeleteCommentRequest)
 		r.Get("/task/{taskID}", commentsHandler.GetCommentsByTaskRequest)
@@ -77,14 +104,15 @@ func main() {
 		r.Put("/{comID}", commentsHandler.UpdateCommentTextRequest)
 	})
 
-	r.With(middleware.AuthMiddleware([]byte("supersecretkey"))).
-		Get("/projects/{projectID}/tasks", taskHandler.ListByProjectTaskRequest)
-
-	r.Route("/users", func(ur chi.Router) {
-		ur.Use(middleware.AuthMiddleware([]byte("supersecretkey")))
-		ur.Put("/profile", authHandler.UpdateUser)
-		ur.Delete("/profile", authHandler.DeleteUser)
+	r.Route("/notification", func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware([]byte("supersecretkey")))
+		r.Post("/", notificationHandler.CreateNotification)
+		r.Get("/", notificationHandler.GetNotifications)
+		r.Post("/mark-read", notificationHandler.MarkAsRead)
+		r.Get("/unread-count", notificationHandler.CountUnread)
 	})
+
+	r.Get("/ws/notifications", notificationWSHandler.WSNotifications)
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
