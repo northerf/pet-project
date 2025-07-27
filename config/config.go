@@ -7,11 +7,11 @@ import (
 )
 
 type Config struct {
-	DBDsn          string `envconfig:"DB_DSN" default:"postgres://petuser:petpassword@localhost:5432/petprojectdb?sslmode=disable"`
-	JwtSecret      []byte `envconfig:"JWT_SECRET" default:"Kc9p1DrGrymYVwGJH5kRatq1g8pK9q2z"`
-	Port           string `envconfig:"PORT" default:"8080"`
-	LogLevel       string `envconfig:"LOG_LEVEL" default:"debug"`
-	MigratitionDir string `envconfig:"MIGRATITIONS_DIR" default:"./migrations"`
+	DBDsn          string `envconfig:"DB_DSN" default:""`
+	JwtSecret      []byte `envconfig:"JWT_SECRET" default:""`
+	Port           string `envconfig:"PORT" default:""`
+	LogLevel       string `envconfig:""`
+	MigratitionDir string `envconfig:""`
 }
 
 func Load() Config {
