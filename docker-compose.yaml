@@ -4,9 +4,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: petuser
-      POSTGRES_PASSWORD: petpassword
-      POSTGRES_DB: petprojectdb
+      POSTGRES_USER:
+      POSTGRES_PASSWORD:
+      POSTGRES_DB:
     ports:
       - "5432:5432"
     volumes:
